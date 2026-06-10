@@ -48,6 +48,7 @@ SADECE JSON döndür, başka hiçbir şey yazma, markdown kullanma:
     const data = await response.json();
     const raw = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
     const clean = raw.replace(/```json|```/g, "").trim();
+    if (!clean) throw new Error("Model boş yanıt döndü (güvenlik filtresi veya kota). Tekrar deneyin.");
     const parsed = JSON.parse(clean);
     res.status(200).json(parsed);
   } catch (err) {
