@@ -108,6 +108,7 @@
     <button class="platform-btn" data-platform="trendyol" data-color="#F27A1A" onclick="selectPlatform(this)">Trendyol</button>
     <button class="platform-btn" data-platform="amazon" data-color="#FF9900" onclick="selectPlatform(this)">Amazon</button>
     <button class="platform-btn" data-platform="instagram" data-color="#E1306C" onclick="selectPlatform(this)">Instagram</button>
+    <button class="platform-btn" data-platform="shopier" data-color="#7C3AED" onclick="selectPlatform(this)">Shopier</button>
   </div>
 
   <!-- Upload -->
@@ -188,16 +189,136 @@
     setTimeout(() => { btn.textContent = "Kopyala"; btn.classList.remove("copied"); }, 1800);
   }
 
+  function escapeHtml(s) {
+    if (s == null) return "";
+    return String(s)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
   function makeCard(label, value, mono) {
     if (!value) return "";
     const id = "v" + Math.random().toString(36).slice(2);
     return `<div class="card">
       <div class="card-header">
-        <span class="card-label">${label}</span>
+        <span class="card-label">${escapeHtml(label)}</span>
         <button class="copy-btn" onclick="copyText(document.getElementById('${id}').textContent, this)">Kopyala</button>
       </div>
-      <p class="card-text ${mono ? 'mono' : ''}" id="${id}">${value}</p>
+      <p class="card-text ${mono ? 'mono' : ''}" id="${id}">${escapeHtml(value)}</p>
     </div>`;
+  }
+
+  function makeListCard(label, items) {
+    if (!items || !items.length) return "";
+    const id = "v" + Math.random().toString(36).slice(2);
+    const listHtml = items.map(i => "• " + i).join("\n");
+    return `<div class="card">
+      <div class="card-header">
+        <span class="card-label">${escapeHtml(label)}</span>
+        <button class="copy-btn" onclick="copyText(document.getElementById('${id}').textContent, this)">Kopyala</button>
+      </div>
+      <p class="card-text" id="${id}" style="white-space:pre-line">${escapeHtml(listHtml)}</p>
+    </div>`;
+  }
+
+  function makeSSSCard(items) {
+    if (!items || !items.length) return "";
+    const id = "v" + Math.random().toString(36).slice(2);
+    const html = items.map(s => `S: ${s.soru}\nC: ${s.cevap}`).join("\n\n");
+    return `<div class="card">
+      <div class="card-header">
+        <span class="card-label">Sıkça Sorulan Sorular</span>
+        <button class="copy-btn" onclick="copyText(document.getElementById('${id}').textContent, this)">Kopyala</button>
+      </div>
+      <p class="card-text" id="${id}" style="white-space:pre-line">${escapeHtml(html)}</p>
+    </div>`;
+  }
+
+  function makeHashtagsCard(groups) {
+    if (!groups) return "";
+    const id = "v" + Math.random().toString(36).slice(2);
+    const parts = [];
+    if (groups.genis?.length) parts.push("Geniş (1M+):\n" + groups.genis.join(" "));
+    if (groups.orta?.length) parts.push("Orta (100K-1M):\n" + groups.orta.join(" "));
+    if (groups.nis?.length) parts.push("Niş:\n" + groups.nis.join(" "));
+    if (!parts.length) return "";
+    return `<div class="card">
+      <div class="card-header">
+        <span class="card-label">Hashtag Stratejisi</span>
+        <button class="copy-btn" onclick="copyText(document.getElementById('${id}').textContent, this)">Kopyala</button>
+      </div>
+      <p class="card-text" id="${id}" style="white-space:pre-line">${escapeHtml(parts.join("\n\n"))}</p>
+    </div>`;
+  }
+
+  function sectionHeader(title) {
+    return `<div style="margin:22px 0 10px;font-size:11px;font-weight:700;letter-spacing:1.5px;color:#a8956b;text-transform:uppercase">${escapeHtml(title)}</div>`;
+  }
+
+  function renderResult(data, color) {
+    let html = `<div class="result-header">
+      <div class="dot" style="background:${color}"></div>
+      <strong style="font-size:15px">SEO İçeriği Hazır</strong>
+    </div>`;
+
+    html += sectionHeader("Temel İçerik");
+    html += makeCard("Ürün Adı / Başlık", data.urun_adi);
+    if (data.alternatif_basliklar?.length) html += makeListCard("Alternatif Başlıklar (A/B Test)", data.alternatif_basliklar);
+    html += makeCard("Açıklama", data.aciklama);
+    html += makeCard("Kısa Açıklama (Sosyal Medya)", data.kisa_aciklama);
+
+    html += sectionHeader("SEO & Dosya");
+    html += makeCard("Google Meta Title (60 kr)", data.seo_meta_title);
+    html += makeCard("Google Meta Description (155 kr)", data.seo_meta_description);
+    html += makeCard("Resim Dosya Adı (URL)", data.resim_adi, true);
+    if (data.search_terms) html += makeCard("Search Terms (Backend)", data.search_terms, true);
+    if (data.etiketler?.length) {
+      const id = "v" + Math.random().toString(36).slice(2);
+      html += `<div class="card">
+        <div class="card-header">
+          <span class="card-label">Etiketler / Tags (${data.etiketler.length})</span>
+          <button class="copy-btn" onclick="copyText(document.getElementById('${id}').textContent, this)">Kopyala</button>
+        </div>
+        <div class="tags">${data.etiketler.map(t => `<span class="tag">${escapeHtml(t)}</span>`).join("")}</div>
+        <p class="card-text" id="${id}" style="display:none">${escapeHtml(data.etiketler.join(", "))}</p>
+      </div>`;
+    }
+
+    html += sectionHeader("Ürün Detayı");
+    if (data.malzemeler?.length) html += makeCard("Malzemeler", data.malzemeler.join(", "));
+    html += makeCard("Tarz", data.tarz);
+    html += makeCard("Taş Türü", data.tas_turu);
+    if (data.renkler?.length) html += makeCard("Renkler", data.renkler.join(", "));
+    html += makeCard("Uzunluk", data.uzunluk);
+    html += makeCard("Kime Uygun", data.kisinin_stili);
+    if (data.one_cikan_ozellikler?.length) html += makeListCard("Öne Çıkan Özellikler (Bullet)", data.one_cikan_ozellikler);
+    html += makeCard("Kategori", data.kategori);
+
+    html += sectionHeader("Satış & Hediye");
+    html += makeCard("Hediye Uygunluğu", data.hediye_uygunlugu);
+    if (data.hediye_mesajlari?.length) html += makeListCard("Hediye Kartı Mesajları", data.hediye_mesajlari);
+    html += makeCard("Kargo & Paketleme", data.kargo_paket);
+    html += makeCard("Bakım Talimatları", data.bakim_talimatlari);
+    if (data.cta_secenekleri?.length) html += makeListCard("CTA Önerileri", data.cta_secenekleri);
+    html += makeCard("Neden Bu Kolyeyi Almalıyım?", data.duygusal_satis_metni);
+
+    html += sectionHeader("Sosyal Medya");
+    html += makeCard("YouTube Video Başlığı", data.video_adi);
+    if (data.reel_script) html += makeCard("Reels / Shorts Senaryosu", data.reel_script, true);
+    if (data.post_caption) html += makeCard("Instagram Post Caption", data.post_caption);
+    if (data.story_text) html += makeCard("Instagram Story Metni", data.story_text);
+    if (data.dm_sablon) html += makeCard("DM Otomatik Yanıt Şablonu", data.dm_sablon);
+    if (data.hashtag_gruplari) html += makeHashtagsCard(data.hashtag_gruplari);
+
+    if (data.sss?.length) {
+      html += sectionHeader("Müşteri SSS");
+      html += makeSSSCard(data.sss);
+    }
+
+    return html;
   }
 
   async function analyze() {
@@ -217,24 +338,7 @@
       const data = await res.json();
       if (data.error) throw new Error(data.error);
 
-      const tagsHtml = data.etiketler?.length
-        ? `<div class="card"><div class="card-header"><span class="card-label">Etiketler / Tags</span>
-           <button class="copy-btn" onclick="copyText('${data.etiketler.join(", ")}', this)">Kopyala</button></div>
-           <div class="tags">${data.etiketler.map(t => `<span class="tag">${t}</span>`).join("")}</div></div>`
-        : "";
-
-      document.getElementById("results").innerHTML = `
-        <div class="result-header">
-          <div class="dot" style="background:${currentColor}"></div>
-          <strong style="font-size:15px">SEO İçeriği Hazır</strong>
-        </div>
-        ${makeCard("Ürün Adı / Başlık", data.urun_adi)}
-        ${makeCard("Açıklama", data.aciklama)}
-        ${makeCard("Resim Dosya Adı", data.resim_adi, true)}
-        ${makeCard("Video Başlığı", data.video_adi)}
-        ${makeCard("Kısa Açıklama (Sosyal Medya)", data.kisa_aciklama)}
-        ${tagsHtml}
-      `;
+      document.getElementById("results").innerHTML = renderResult(data, currentColor);
     } catch (err) {
       document.getElementById("errorBox").style.display = "block";
       document.getElementById("errorBox").textContent = "Hata: " + err.message;
