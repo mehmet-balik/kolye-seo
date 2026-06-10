@@ -45,11 +45,34 @@ SADECE JSON döndür, başka hiçbir şey yazma, markdown kullanma:
       }
     );
 
+    if (!response.ok) {
+      const errBody = await response.text();
+      throw new Error(`Gemini API ${response.status}: ${errBody.slice(0, 200)}`);
+    }
+
     const data = await response.json();
     const raw = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
-    const clean = raw.replace(/```json|```/g, "").trim();
-    if (!clean) throw new Error("Model boş yanıt döndü (güvenlik filtresi veya kota). Tekrar deneyin.");
-    const parsed = JSON.parse(clean);
+
+    const blocked = data.candidates?.[0]?.finishReason;
+    if (blocked && blocked !== "STOP") {
+      throw new Error(`Model yanıt vermedi (sebep: ${blocked}). Görseli değiştirip tekrar deneyin.`);
+    }
+
+    const fenced = raw.match(/```(?:json)?\s*([\s\S]*?)```/i);
+    const candidate = (fenced ? fenced[1] : raw).trim();
+    const jsonMatch = candidate.match(/\{[\s\S]*\}/);
+
+    if (!jsonMatch) {
+      throw new Error("Model JSON döndürmedi. Görseli değiştirip tekrar deneyin.");
+    }
+
+    let parsed;
+    try {
+      parsed = JSON.parse(jsonMatch[0]);
+    } catch {
+      throw new Error("Model eksik JSON üretti. Tekrar deneyin.");
+    }
+
     res.status(200).json(parsed);
   } catch (err) {
     res.status(500).json({ error: "Analiz başarısız: " + err.message });
