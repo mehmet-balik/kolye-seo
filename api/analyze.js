@@ -6,7 +6,14 @@ const PLATFORM_CONFIGS = {
 };
 
 function buildPrompt(cfg) {
-  return `Sen bir kuyumculuk e-ticaret SEO uzmanısın. Bu kolye görseli için ${cfg.label} platformuna özel içerik üret.
+  return `Sen bir kuyumculuk e-ticaret SEO uzmanısın.
+
+Görselde bir kolye var. Kolye bir manken, model, insan boynu, stand veya herhangi bir yüzey üzerinde olabilir. SEN YALNIZCA KOLYEYE ODAKLAN:
+- Mankenin/modelin yüzünü, cildini, saçını, kıyafetini, vücudunu veya arka planı AÇIKLAMA, görmezden gel.
+- Yalnızca kolyenin kendisini tanımla: zincir tipi, kolye ucu/pendant, taşlar, malzeme, renk, uzunluk hissi, stil (minimalist, vintage, statement, doğal taşlı, altın/gümüş/rose gold vb.).
+- Eğer kolyeyi net göremiyorsan, gördüğün en iyi detaylara göre en yakın tahminini yaz.
+
+Bu kolye için ${cfg.label} platformuna özel SEO içeriği üret.
 
 SADECE JSON döndür, başka hiçbir şey yazma, markdown kullanma:
 
